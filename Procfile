@@ -1,1 +1,1 @@
-web: cd server && npm install && node server.js
+web: npm --prefix server install && npm --prefix server start
