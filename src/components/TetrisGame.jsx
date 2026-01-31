@@ -41,13 +41,30 @@ export default function TetrisGame() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [isOnline, setIsOnline] = useState(apiService.isOnline());
   const [currentUser, setCurrentUser] = useState(null);
-  const [gameDuration, setGameDuration] = useState(0);
   const gameStartTimeRef = useRef(null);
 
-  // Refs for game loop
+  // Refs for game loop - use refs to avoid stale closures
   const gameLoopRef = useRef(null);
   const dropCounterRef = useRef(0);
   const dropIntervalRef = useRef(getDropInterval(0));
+  
+  // Refs for current state (avoid stale closures in game loop)
+  const boardRef = useRef(board);
+  const scoreRef = useRef(score);
+  const linesRef = useRef(lines);
+  const levelRef = useRef(level);
+  const startingLevelRef = useRef(startingLevel);
+  const nextPieceRef = useRef(nextPiece);
+  const currentPieceRef = useRef(currentPiece);
+
+  // Keep refs in sync with state
+  useEffect(() => { boardRef.current = board; }, [board]);
+  useEffect(() => { scoreRef.current = score; }, [score]);
+  useEffect(() => { linesRef.current = lines; }, [lines]);
+  useEffect(() => { levelRef.current = level; }, [level]);
+  useEffect(() => { startingLevelRef.current = startingLevel; }, [startingLevel]);
+  useEffect(() => { nextPieceRef.current = nextPiece; }, [nextPiece]);
+  useEffect(() => { currentPieceRef.current = currentPiece; }, [currentPiece]);
 
   // Load high scores on mount
   useEffect(() => {
@@ -82,44 +99,54 @@ export default function TetrisGame() {
   useEffect(() => {
     if (gameState !== 'playing' || !currentPiece) return;
 
-    gameLoopRef.current = setInterval(() => {
+    const gameLoop = () => {
       dropCounterRef.current += 16; // ~60 FPS
 
       if (dropCounterRef.current >= dropIntervalRef.current) {
         dropCounterRef.current = 0;
-        handleAutoDrop();
+        
+        // Use refs to get current values
+        const piece = currentPieceRef.current;
+        if (!piece) return;
+
+        const currentBoard = boardRef.current;
+        const newPos = [piece.position[0] + 1, piece.position[1]];
+
+        if (checkCollision(currentBoard, piece, newPos)) {
+          // Lock the piece
+          lockCurrentPiece(piece);
+        } else {
+          setCurrentPiece({ ...piece, position: newPos });
+        }
       }
-    }, 16);
+    };
 
-    return () => clearInterval(gameLoopRef.current);
-  }, [gameState, currentPiece, level]);
+    gameLoopRef.current = setInterval(gameLoop, 16);
 
-  const handleAutoDrop = useCallback(() => {
-    setCurrentPiece(prev => {
-      if (!prev) return prev;
-
-      const newPos = [prev.position[0] + 1, prev.position[1]];
-
-      if (checkCollision(board, prev, newPos)) {
-        // Piece locked
-        handleLockPiece(prev);
-        return null;
+    return () => {
+      if (gameLoopRef.current) {
+        clearInterval(gameLoopRef.current);
       }
+    };
+  }, [gameState, currentPiece]);
 
-      return { ...prev, position: newPos };
-    });
-  }, [board]);
+  const lockCurrentPiece = useCallback((piece) => {
+    const currentBoard = boardRef.current;
+    const currentScore = scoreRef.current;
+    const currentLines = linesRef.current;
+    const currentLevel = levelRef.current;
+    const currentStartingLevel = startingLevelRef.current;
+    const currentNextPiece = nextPieceRef.current;
 
-  const handleLockPiece = useCallback((piece) => {
-    const newBoard = lockPiece(board, piece, piece.position);
+    const newBoard = lockPiece(currentBoard, piece, piece.position);
     const { newBoard: clearedBoard, linesCleared } = clearLines(newBoard);
 
-    let newScore = score;
-    let newLines = lines + linesCleared;
-    let newLevel = calculateLevel(startingLevel, newLines);
+    let newScore = currentScore;
+    let newLines = currentLines + linesCleared;
+    let newLevel = calculateLevel(currentStartingLevel, newLines);
 
     if (linesCleared > 0) {
-      newScore += calculateScore(linesCleared, level);
+      newScore += calculateScore(linesCleared, currentLevel);
     }
 
     setBoard(clearedBoard);
@@ -136,11 +163,11 @@ export default function TetrisGame() {
     } else {
       // Spawn next piece
       const newNextPiece = getRandomPiece();
-      setCurrentPiece(spawnPiece(nextPiece || newNextPiece));
+      setCurrentPiece(spawnPiece(currentNextPiece || newNextPiece));
       setNextPiece(newNextPiece);
       dropCounterRef.current = 0;
     }
-  }, [board, score, lines, level, startingLevel, nextPiece]);
+  }, []);
 
   const handleGameOver = useCallback((finalScore, finalLines, finalLevel) => {
     const duration = gameStartTimeRef.current ? Date.now() - gameStartTimeRef.current : 0;
@@ -182,28 +209,35 @@ export default function TetrisGame() {
         return;
       }
 
-      if (gameState !== 'playing' || !currentPiece) return;
+      if (gameState !== 'playing') return;
+      
+      const piece = currentPieceRef.current;
+      const currentBoard = boardRef.current;
+      if (!piece) return;
 
       switch (e.key) {
         case 'ArrowLeft':
           e.preventDefault();
           setCurrentPiece(prev => {
+            if (!prev) return prev;
             const moved = movePiece(prev, 'left');
-            return checkCollision(board, moved, moved.position) ? prev : moved;
+            return checkCollision(currentBoard, moved, moved.position) ? prev : moved;
           });
           break;
         case 'ArrowRight':
           e.preventDefault();
           setCurrentPiece(prev => {
+            if (!prev) return prev;
             const moved = movePiece(prev, 'right');
-            return checkCollision(board, moved, moved.position) ? prev : moved;
+            return checkCollision(currentBoard, moved, moved.position) ? prev : moved;
           });
           break;
         case 'ArrowDown':
           e.preventDefault();
           dropCounterRef.current = 0;
           setCurrentPiece(prev => {
-            const dropped = softDrop(prev, board);
+            if (!prev) return prev;
+            const dropped = softDrop(prev, currentBoard);
             if (dropped !== prev) {
               setScore(s => s + 1);
             }
@@ -214,22 +248,28 @@ export default function TetrisGame() {
         case 'x':
         case 'X':
           e.preventDefault();
-          setCurrentPiece(prev => rotatePiece(prev, board, 'clockwise'));
+          setCurrentPiece(prev => {
+            if (!prev) return prev;
+            return rotatePiece(prev, currentBoard, 'clockwise');
+          });
           break;
         case 'z':
         case 'Z':
           e.preventDefault();
-          setCurrentPiece(prev => rotatePiece(prev, board, 'counterclockwise'));
+          setCurrentPiece(prev => {
+            if (!prev) return prev;
+            return rotatePiece(prev, currentBoard, 'counterclockwise');
+          });
           break;
         case ' ':
           e.preventDefault();
-          setCurrentPiece(prev => {
-            const dropped = hardDrop(prev, board);
-            const cellsDropped = dropped.position[0] - prev.position[0];
+          if (piece) {
+            const dropped = hardDrop(piece, currentBoard);
+            const cellsDropped = dropped.position[0] - piece.position[0];
             setScore(s => s + cellsDropped * 2);
-            handleLockPiece(dropped);
-            return null;
-          });
+            setCurrentPiece(null);
+            lockCurrentPiece(dropped);
+          }
           break;
         case 'Enter':
           if (gameState === 'gameover') {
@@ -243,7 +283,7 @@ export default function TetrisGame() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState, currentPiece, board, handleLockPiece]);
+  }, [gameState, lockCurrentPiece]);
 
   const handleSelectLevel = (lvl) => {
     setStartingLevel(lvl);
