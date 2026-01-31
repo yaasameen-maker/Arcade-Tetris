@@ -23,7 +23,7 @@ import {
 import { calculateScore, calculateLevel } from '../game-engine/tetris-scoring';
 import { getDropInterval } from '../game-engine/tetris-levels';
 import { storageService } from '../services/storageService';
-import apiService from '../services/apiService';
+import { apiService } from '../services/apiService';
 
 export default function TetrisGame() {
   // Game states
