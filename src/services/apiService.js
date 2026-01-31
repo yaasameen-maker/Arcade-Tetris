@@ -15,7 +15,7 @@ window.addEventListener('offline', () => {
 // User authentication
 let currentUser = null;
 
-export const apiService = {
+const apiService = {
   // Authentication
   async register(username, password) {
     const response = await fetch(`${API_URL}/auth/register`, {
