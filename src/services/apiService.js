@@ -208,4 +208,4 @@ async function syncPendingScores() {
   }
 }
 
-export default apiService;
+export { apiService };
