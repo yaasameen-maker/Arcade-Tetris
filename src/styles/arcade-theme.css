@@ -36,7 +36,8 @@ body {
   font-family: 'Press Start 2P', cursive;
   background-color: var(--bg-dark);
   color: var(--text-primary);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 html, body, #root {
@@ -65,16 +66,16 @@ body::before {
 
 .game-container {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg, var(--bg-dark) 0%, #1a0a2e 100%);
 }
 
 .game-header {
-  padding: 10px 20px;
+  padding: 8px 15px;
   text-align: center;
-  border-bottom: 3px solid var(--neon-cyan);
+  border-bottom: 2px solid var(--neon-cyan);
   box-shadow: var(--border-glow);
   background: rgba(0, 255, 255, 0.05);
 }
@@ -83,12 +84,12 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 30px;
+  gap: 20px;
   flex-wrap: wrap;
 }
 
 .game-header h1 {
-  font-size: 24px;
+  font-size: 18px;
   letter-spacing: 2px;
   text-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-pink);
   color: var(--neon-cyan);
@@ -165,42 +166,43 @@ body::before {
 
 .level-select-container {
   width: 100%;
-  height: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  padding: 20px;
+  padding: 15px;
+  overflow-y: auto;
 }
 
 .level-select-box {
   background: var(--bg-panel);
   border: 3px solid var(--neon-cyan);
-  padding: 30px;
+  padding: 20px;
   border-radius: 0;
   box-shadow: var(--border-glow), inset 0 0 20px rgba(0, 255, 255, 0.1);
-  max-width: 500px;
+  max-width: 450px;
   width: 100%;
 }
 
 .level-label {
   text-align: center;
   color: var(--neon-yellow);
-  font-size: 14px;
-  margin-bottom: 20px;
+  font-size: 12px;
+  margin-bottom: 15px;
   text-shadow: 0 0 5px var(--neon-yellow);
 }
 
 .level-buttons {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 8px;
+  margin-bottom: 15px;
 }
 
 .level-button {
-  padding: 15px;
-  font-size: 12px;
+  padding: 10px;
+  font-size: 10px;
   font-family: 'Press Start 2P', cursive;
   background: rgba(0, 255, 255, 0.1);
   border: 2px solid var(--neon-cyan);
@@ -237,14 +239,14 @@ body::before {
 
 .start-button {
   width: 100%;
-  padding: 15px;
-  font-size: 14px;
+  padding: 12px;
+  font-size: 12px;
   font-family: 'Press Start 2P', cursive;
   background: linear-gradient(135deg, var(--neon-pink), var(--neon-cyan));
   border: 2px solid var(--neon-pink);
   color: var(--bg-dark);
   cursor: pointer;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   box-shadow: 0 0 20px var(--neon-pink);
   transition: all 0.2s;
   font-weight: bold;
@@ -256,18 +258,18 @@ body::before {
 }
 
 .controls-info {
-  font-size: 10px;
+  font-size: 8px;
   color: var(--text-secondary);
   text-align: center;
-  line-height: 1.6;
+  line-height: 1.4;
 }
 
 .controls-info p {
-  margin: 5px 0;
+  margin: 3px 0;
 }
 
 .menu-leaderboard {
-  margin-top: 40px;
+  margin-top: 20px;
   width: 100%;
-  max-width: 600px;
+  max-width: 500px;
 }
