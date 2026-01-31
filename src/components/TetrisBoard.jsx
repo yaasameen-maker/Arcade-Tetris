@@ -1,4 +1,5 @@
 import React from 'react';
+import { PIECES } from '../game-engine/tetris-pieces.js';
 
 export default function TetrisBoard({ board, currentPiece }) {
   const renderCell = (rowIndex, colIndex) => {
@@ -7,7 +8,6 @@ export default function TetrisBoard({ board, currentPiece }) {
     // Check if current piece occupies this cell
     if (currentPiece) {
       const { type, rotation, position } = currentPiece;
-      const { PIECES } = require('../game-engine/tetris-pieces.js');
       const rotationData = PIECES[type].rotations[rotation];
       const [pieceRow, pieceCol] = position;
       

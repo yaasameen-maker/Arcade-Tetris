@@ -1,7 +1,7 @@
 import React from 'react';
+import { PIECES } from '../game-engine/tetris-pieces.js';
 
 export default function NextPiece({ pieceType }) {
-  const { PIECES } = require('../game-engine/tetris-pieces.js');
   
   if (!pieceType || !PIECES[pieceType]) {
     return <div className="next-piece-box" />;
