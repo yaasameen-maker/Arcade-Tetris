@@ -12,6 +12,7 @@ import {
   checkCollision,
   lockPiece,
   clearLines,
+  getFullRows,
   spawnPiece,
   movePiece,
   rotatePiece,
@@ -37,6 +38,7 @@ export default function TetrisGame() {
   const [level, setLevel] = useState(0);
   const [startingLevel, setStartingLevel] = useState(0);
   const [leaderboardScores, setLeaderboardScores] = useState(storageService.getScores());
+  const [clearingRows, setClearingRows] = useState([]);
   const [isHighScore, setIsHighScore] = useState(false);
   const [newRank, setNewRank] = useState(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
@@ -148,32 +150,48 @@ export default function TetrisGame() {
     const currentStartingLevel = startingLevelRef.current;
     const currentNextPiece = nextPieceRef.current;
 
-    const newBoard = lockPiece(currentBoard, piece, piece.position);
-    const { newBoard: clearedBoard, linesCleared } = clearLines(newBoard);
+    const lockedBoard = lockPiece(currentBoard, piece, piece.position);
+    const fullRows = getFullRows(lockedBoard);
 
-    const newLines = currentLines + linesCleared;
-    const newLevel = calculateLevel(currentStartingLevel, newLines);
-    const lineScore = linesCleared > 0 ? calculateScore(linesCleared, currentLevel) : 0;
+    // Stop the active piece so the game loop idles during the flash
+    setCurrentPiece(null);
+    setBoard(lockedBoard);
 
-    setBoard(clearedBoard);
-    setLines(newLines);
-    setScore(prev => prev + lineScore);
-    setLevel(newLevel);
+    if (fullRows.length > 0) {
+      setClearingRows(fullRows);
+      setTimeout(() => {
+        setClearingRows([]);
+        const { newBoard: clearedBoard, linesCleared } = clearLines(lockedBoard);
+        const newLines = currentLines + linesCleared;
+        const newLevel = calculateLevel(currentStartingLevel, newLines);
+        const lineScore = calculateScore(linesCleared, currentLevel);
 
-    // Update drop interval based on new level
-    dropIntervalRef.current = getDropInterval(newLevel);
+        setBoard(clearedBoard);
+        setLines(newLines);
+        setScore(prev => prev + lineScore);
+        setLevel(newLevel);
+        dropIntervalRef.current = getDropInterval(newLevel);
 
-    // Check game over
-    if (isGameOver(clearedBoard)) {
-      handleGameOver(scoreRef.current + lineScore, newLines, newLevel);
+        if (isGameOver(clearedBoard)) {
+          handleGameOver(scoreRef.current + lineScore, newLines, newLevel);
+        } else {
+          const newNextPiece = getRandomPiece();
+          setCurrentPiece(spawnPiece(currentNextPiece || newNextPiece));
+          setNextPiece(newNextPiece);
+          dropCounterRef.current = 0;
+        }
+      }, 300);
     } else {
-      // Spawn next piece
-      const newNextPiece = getRandomPiece();
-      setCurrentPiece(spawnPiece(currentNextPiece || newNextPiece));
-      setNextPiece(newNextPiece);
-      dropCounterRef.current = 0;
+      if (isGameOver(lockedBoard)) {
+        handleGameOver(scoreRef.current, currentLines, calculateLevel(currentStartingLevel, currentLines));
+      } else {
+        const newNextPiece = getRandomPiece();
+        setCurrentPiece(spawnPiece(currentNextPiece || newNextPiece));
+        setNextPiece(newNextPiece);
+        dropCounterRef.current = 0;
+      }
     }
-  }, []);
+  }, [handleGameOver]);
 
   const handleGameOver = useCallback((finalScore, finalLines, finalLevel) => {
     const duration = gameStartTimeRef.current ? Date.now() - gameStartTimeRef.current : 0;
@@ -386,7 +404,7 @@ export default function TetrisGame() {
 
       <div className="game-layout">
         <div className="game-main">
-          <TetrisBoard board={board} currentPiece={currentPiece} />
+          <TetrisBoard board={board} currentPiece={currentPiece} clearingRows={clearingRows} />
         </div>
 
         <div className="game-sidebar">

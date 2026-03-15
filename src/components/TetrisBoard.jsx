@@ -1,7 +1,7 @@
 import React from 'react';
 import { PIECES } from '../game-engine/tetris-pieces.js';
 
-export default function TetrisBoard({ board, currentPiece }) {
+export default function TetrisBoard({ board, currentPiece, clearingRows = [] }) {
   const renderCell = (rowIndex, colIndex) => {
     const cellColor = board[rowIndex][colIndex];
     
@@ -30,7 +30,7 @@ export default function TetrisBoard({ board, currentPiece }) {
   return (
     <div className="tetris-board">
       {board.map((row, rowIndex) => (
-        <div key={rowIndex} className="board-row">
+        <div key={rowIndex} className={`board-row${clearingRows.includes(rowIndex) ? ' line-clearing' : ''}`}>
           {row.map((cell, colIndex) => {
             const cellColor = renderCell(rowIndex, colIndex);
             return (

@@ -48,6 +48,13 @@ export function lockPiece(board, piece, position) {
   return newBoard;
 }
 
+export function getFullRows(board) {
+  return board.reduce((acc, row, idx) => {
+    if (row.every(cell => cell !== null)) acc.push(idx);
+    return acc;
+  }, []);
+}
+
 export function clearLines(board) {
   const newBoard = board.filter(row => row.some(cell => cell === null));
   const linesCleared = 20 - newBoard.length;

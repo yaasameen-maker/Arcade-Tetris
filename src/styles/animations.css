@@ -150,19 +150,14 @@
 
 /* Line clear animation */
 @keyframes lineClear {
-  0% {
-    background-color: rgba(255, 255, 255, 0.3);
-  }
-  50% {
-    background-color: var(--neon-yellow);
-  }
-  100% {
-    background-color: transparent;
-  }
+  0%   { filter: brightness(1); }
+  25%  { filter: brightness(4) saturate(0.2); }
+  60%  { filter: brightness(8) saturate(0); }
+  100% { filter: brightness(1); opacity: 0; }
 }
 
-.line-clearing {
-  animation: lineClear 0.3s ease-out;
+.line-clearing .board-cell {
+  animation: lineClear 0.3s ease-out forwards;
 }
 
 /* Responsive Design */
