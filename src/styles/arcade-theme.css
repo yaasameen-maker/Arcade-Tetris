@@ -130,6 +130,23 @@ body::before {
   text-shadow: 0 0 5px var(--neon-pink);
 }
 
+.pause-btn {
+  padding: 6px 14px;
+  font-size: 9px;
+  font-family: 'Press Start 2P', cursive;
+  background: rgba(255, 255, 0, 0.1);
+  border: 2px solid var(--neon-yellow);
+  color: var(--neon-yellow);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-shadow: 0 0 5px var(--neon-yellow);
+}
+
+.pause-btn:hover {
+  background: rgba(255, 255, 0, 0.2);
+  box-shadow: 0 0 10px var(--neon-yellow);
+}
+
 .game-layout {
   display: flex;
   flex: 1;

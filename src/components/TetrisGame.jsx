@@ -374,6 +374,12 @@ export default function TetrisGame() {
             {currentUser && (
               <span className="user-info">👤 {currentUser.username}</span>
             )}
+            <button
+              className="pause-btn"
+              onClick={() => setGameState(prev => prev === 'playing' ? 'paused' : 'playing')}
+            >
+              {gameState === 'paused' ? '▶ RESUME' : '⏸ PAUSE'}
+            </button>
           </div>
         </div>
       </div>
