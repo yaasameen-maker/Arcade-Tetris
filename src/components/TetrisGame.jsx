@@ -6,6 +6,7 @@ import LevelSelect from './LevelSelect';
 import GameOver from './GameOver';
 import PauseMenu from './PauseMenu';
 import Leaderboard from './Leaderboard';
+import Auth from './Auth';
 import {
   createEmptyBoard,
   checkCollision,
@@ -35,10 +36,11 @@ export default function TetrisGame() {
   const [lines, setLines] = useState(0);
   const [level, setLevel] = useState(0);
   const [startingLevel, setStartingLevel] = useState(0);
-  const [highScores, setHighScores] = useState([]);
+  const [leaderboardScores, setLeaderboardScores] = useState(storageService.getScores());
   const [isHighScore, setIsHighScore] = useState(false);
   const [newRank, setNewRank] = useState(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const [isOnline, setIsOnline] = useState(apiService.isOnline());
   const [currentUser, setCurrentUser] = useState(null);
   const gameStartTimeRef = useRef(null);
@@ -66,11 +68,20 @@ export default function TetrisGame() {
   useEffect(() => { nextPieceRef.current = nextPiece; }, [nextPiece]);
   useEffect(() => { currentPieceRef.current = currentPiece; }, [currentPiece]);
 
+  const refreshLeaderboard = useCallback(() => {
+    const local = storageService.getScores();
+    setLeaderboardScores(local);
+    apiService.getLeaderboard(20).then(data => {
+      if (data.scores && data.scores.length > 0) {
+        setLeaderboardScores(data.scores);
+      }
+    }).catch(() => {});
+  }, []);
+
   // Load high scores on mount
   useEffect(() => {
-    // Load local scores
-    setHighScores(storageService.getScores());
-    
+    refreshLeaderboard();
+
     // Load current user if logged in
     apiService.getCurrentUser().then(user => {
       if (user) setCurrentUser(user);
@@ -132,7 +143,6 @@ export default function TetrisGame() {
 
   const lockCurrentPiece = useCallback((piece) => {
     const currentBoard = boardRef.current;
-    const currentScore = scoreRef.current;
     const currentLines = linesRef.current;
     const currentLevel = levelRef.current;
     const currentStartingLevel = startingLevelRef.current;
@@ -141,17 +151,13 @@ export default function TetrisGame() {
     const newBoard = lockPiece(currentBoard, piece, piece.position);
     const { newBoard: clearedBoard, linesCleared } = clearLines(newBoard);
 
-    let newScore = currentScore;
-    let newLines = currentLines + linesCleared;
-    let newLevel = calculateLevel(currentStartingLevel, newLines);
-
-    if (linesCleared > 0) {
-      newScore += calculateScore(linesCleared, currentLevel);
-    }
+    const newLines = currentLines + linesCleared;
+    const newLevel = calculateLevel(currentStartingLevel, newLines);
+    const lineScore = linesCleared > 0 ? calculateScore(linesCleared, currentLevel) : 0;
 
     setBoard(clearedBoard);
     setLines(newLines);
-    setScore(newScore);
+    setScore(prev => prev + lineScore);
     setLevel(newLevel);
 
     // Update drop interval based on new level
@@ -159,7 +165,7 @@ export default function TetrisGame() {
 
     // Check game over
     if (isGameOver(clearedBoard)) {
-      handleGameOver(newScore, newLines, newLevel);
+      handleGameOver(scoreRef.current + lineScore, newLines, newLevel);
     } else {
       // Spawn next piece
       const newNextPiece = getRandomPiece();
@@ -183,17 +189,12 @@ export default function TetrisGame() {
         level: finalLevel
       });
       setNewRank(rank);
-      setHighScores(storageService.getScores());
     }
 
     // Submit to backend (online or offline)
     apiService.submitScore(finalScore, finalLines, finalLevel, duration)
-      .then(result => {
-        console.log('✅ Score submitted', result);
-      })
-      .catch(err => {
-        console.error('⚠️ Score saved locally, will sync when online:', err);
-      });
+      .then(() => refreshLeaderboard())
+      .catch(() => refreshLeaderboard());
 
     setGameState('gameover');
   }, []);
@@ -319,19 +320,43 @@ export default function TetrisGame() {
     setGameState('menu');
   };
 
+  const handleLogin = (user) => {
+    setCurrentUser(user);
+    setShowAuth(false);
+    refreshLeaderboard();
+  };
+
+  const handleLogout = () => {
+    apiService.logout();
+    setCurrentUser(null);
+  };
+
   // Render
   if (gameState === 'menu') {
     return (
       <div className="game-container">
-        <LevelSelect
-          selectedLevel={startingLevel}
-          onSelectLevel={handleSelectLevel}
-          onStartGame={handleStartGame}
-        />
-        {highScores.length > 0 && (
+        <div className="menu-auth-bar">
+          {currentUser ? (
+            <>
+              <span className="menu-auth-user">▶ {currentUser.username}</span>
+              <button className="menu-auth-btn signout" onClick={handleLogout}>SIGN OUT</button>
+            </>
+          ) : (
+            <button className="menu-auth-btn" onClick={() => setShowAuth(true)}>SIGN IN / REGISTER</button>
+          )}
+        </div>
+        <div className="menu-layout">
+          <LevelSelect
+            selectedLevel={startingLevel}
+            onSelectLevel={handleSelectLevel}
+            onStartGame={handleStartGame}
+          />
           <div className="menu-leaderboard">
-            <Leaderboard scores={highScores} />
+            <Leaderboard scores={leaderboardScores} />
           </div>
+        </div>
+        {showAuth && (
+          <Auth onLogin={handleLogin} onClose={() => setShowAuth(false)} />
         )}
       </div>
     );
@@ -368,12 +393,13 @@ export default function TetrisGame() {
         <PauseMenu onResume={handleResume} onQuit={handleQuitToMenu} />
       )}
 
-      {gameState === 'gameover' && (
+      {gameState === 'gameover' && !showLeaderboard && (
         <GameOver
           score={score}
           lines={lines}
           level={level}
           onRestart={handleRestart}
+          onShowLeaderboard={() => setShowLeaderboard(true)}
           isHighScore={isHighScore}
           rank={newRank}
         />
@@ -382,7 +408,11 @@ export default function TetrisGame() {
       {showLeaderboard && (
         <div className="leaderboard-modal-overlay">
           <div className="leaderboard-modal">
-            <Leaderboard scores={highScores} onClose={() => setShowLeaderboard(false)} />
+            <Leaderboard
+              scores={leaderboardScores}
+              onClose={() => setShowLeaderboard(false)}
+              title={leaderboardScores.some(s => s.username) ? 'GLOBAL LEADERBOARD' : 'HIGH SCORES'}
+            />
           </div>
         </div>
       )}

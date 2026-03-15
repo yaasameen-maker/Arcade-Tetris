@@ -2,7 +2,7 @@ import { PIECES, PIECE_TYPES } from './tetris-pieces.js';
 
 // Board operations
 export function createEmptyBoard() {
-  return Array(22)
+  return Array(20)
     .fill(null)
     .map(() => Array(10).fill(null));
 }
@@ -19,7 +19,7 @@ export function checkCollision(board, piece, position) {
         const boardCol = col + c;
 
         if (boardRow < 0) continue; // Allow pieces above board
-        if (boardRow >= 22 || boardCol < 0 || boardCol >= 10) return true;
+        if (boardRow >= 20 || boardCol < 0 || boardCol >= 10) return true;
         if (board[boardRow][boardCol] !== null) return true;
       }
     }
@@ -39,7 +39,7 @@ export function lockPiece(board, piece, position) {
       if (rotationData[r][c]) {
         const boardRow = row + r;
         const boardCol = col + c;
-        if (boardRow >= 0 && boardRow < 22 && boardCol >= 0 && boardCol < 10) {
+        if (boardRow >= 0 && boardRow < 20 && boardCol >= 0 && boardCol < 10) {
           newBoard[boardRow][boardCol] = color;
         }
       }
@@ -50,9 +50,9 @@ export function lockPiece(board, piece, position) {
 
 export function clearLines(board) {
   const newBoard = board.filter(row => row.some(cell => cell === null));
-  const linesCleared = 22 - newBoard.length;
+  const linesCleared = 20 - newBoard.length;
 
-  while (newBoard.length < 22) {
+  while (newBoard.length < 20) {
     newBoard.unshift(Array(10).fill(null));
   }
 

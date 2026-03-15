@@ -30,23 +30,21 @@ export default function TetrisBoard({ board, currentPiece }) {
   return (
     <div className="tetris-board">
       {board.map((row, rowIndex) => (
-        rowIndex < 20 && (
-          <div key={rowIndex} className="board-row">
-            {row.map((cell, colIndex) => {
-              const cellColor = renderCell(rowIndex, colIndex);
-              return (
-                <div
-                  key={`${rowIndex}-${colIndex}`}
-                  className="board-cell"
-                  style={{
-                    backgroundColor: cellColor || 'rgba(0, 255, 255, 0.1)',
-                    borderColor: cellColor ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 255, 255, 0.3)'
-                  }}
-                />
-              );
-            })}
-          </div>
-        )
+        <div key={rowIndex} className="board-row">
+          {row.map((cell, colIndex) => {
+            const cellColor = renderCell(rowIndex, colIndex);
+            return (
+              <div
+                key={`${rowIndex}-${colIndex}`}
+                className="board-cell"
+                style={{
+                  backgroundColor: cellColor || 'rgba(0, 255, 255, 0.1)',
+                  borderColor: cellColor ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 255, 255, 0.3)'
+                }}
+              />
+            );
+          })}
+        </div>
       ))}
     </div>
   );

@@ -1,20 +1,20 @@
 import React from 'react';
 
-export default function GameOver({ score, lines, level, onRestart, isHighScore, rank }) {
+export default function GameOver({ score, lines, level, onRestart, onShowLeaderboard, isHighScore, rank }) {
   const formatScore = (num) => String(num).padStart(6, '0');
 
   return (
     <div className="gameover-overlay">
       <div className="gameover-menu">
         <h1>GAME OVER</h1>
-        
+
         {isHighScore && (
           <div className="high-score-alert">
-            🎉 NEW HIGH SCORE! 🎉
+            NEW HIGH SCORE!
             {rank && <p>RANK #{rank}</p>}
           </div>
         )}
-        
+
         <div className="gameover-stats">
           <div className="stat-item">
             <span className="stat-label">FINAL SCORE</span>
@@ -29,9 +29,12 @@ export default function GameOver({ score, lines, level, onRestart, isHighScore, 
             <span className="stat-value">{formatScore(level)}</span>
           </div>
         </div>
-        
+
         <button className="restart-button" onClick={onRestart}>
           PLAY AGAIN
+        </button>
+        <button className="leaderboard-button" onClick={onShowLeaderboard}>
+          VIEW LEADERBOARD
         </button>
       </div>
     </div>
