@@ -143,6 +143,30 @@ export default function TetrisGame() {
     };
   }, [gameState, currentPiece]);
 
+  const handleGameOver = useCallback((finalScore, finalLines, finalLevel) => {
+    const duration = gameStartTimeRef.current ? Date.now() - gameStartTimeRef.current : 0;
+    
+    // Save to localStorage
+    const isHigh = storageService.isHighScore(finalScore);
+    setIsHighScore(isHigh);
+
+    if (isHigh) {
+      const rank = storageService.saveScore({
+        score: finalScore,
+        lines: finalLines,
+        level: finalLevel
+      });
+      setNewRank(rank);
+    }
+
+    // Submit to backend (online or offline)
+    apiService.submitScore(finalScore, finalLines, finalLevel, duration)
+      .then(() => refreshLeaderboard())
+      .catch(() => refreshLeaderboard());
+
+    setGameState('gameover');
+  }, []);
+
   const lockCurrentPiece = useCallback((piece) => {
     const currentBoard = boardRef.current;
     const currentLines = linesRef.current;
@@ -192,30 +216,6 @@ export default function TetrisGame() {
       }
     }
   }, [handleGameOver]);
-
-  const handleGameOver = useCallback((finalScore, finalLines, finalLevel) => {
-    const duration = gameStartTimeRef.current ? Date.now() - gameStartTimeRef.current : 0;
-    
-    // Save to localStorage
-    const isHigh = storageService.isHighScore(finalScore);
-    setIsHighScore(isHigh);
-
-    if (isHigh) {
-      const rank = storageService.saveScore({
-        score: finalScore,
-        lines: finalLines,
-        level: finalLevel
-      });
-      setNewRank(rank);
-    }
-
-    // Submit to backend (online or offline)
-    apiService.submitScore(finalScore, finalLines, finalLevel, duration)
-      .then(() => refreshLeaderboard())
-      .catch(() => refreshLeaderboard());
-
-    setGameState('gameover');
-  }, []);
 
   // Keyboard controls
   useEffect(() => {
